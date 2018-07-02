@@ -1,0 +1,23 @@
+{
+  "presets": [
+    "react-native"
+  ],
+  "plugins": [
+    [
+      "module-alias",
+      [
+        {
+          "src": "./modules/mfg-base",
+          "expose": "mfg-base"
+        }
+      ]
+    ],
+    [
+      "conditional-compilation",
+      {
+        "isTestEnv": false,
+        "IS_RN_ENV": true
+      }
+    ]
+  ]
+}

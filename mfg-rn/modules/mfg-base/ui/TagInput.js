@@ -1,0 +1,378 @@
+/* @flow */
+/* eslint-disable */
+
+import React, { Component } from 'react';
+import { rnCreateStylesheet } from '../rn/RN'
+import {
+  RNText, RNScrollView, RNTextInput, RNTouchableOpacity, RNTouchableWithoutFeedback,
+  RNView,
+} from './RNUI'
+
+type Props = {
+  /**
+   * A handler to be called when array of tags change
+   */
+  onChange: (items: Array<any>) => void,
+  onTextChange: (str: string) => void,
+  /**
+   * An array of tags
+   */
+  value: Array<any>,
+  valueText: string,
+  /**
+   * An array os characters to use as tag separators
+   */
+  separators: Array<string>,
+  /**
+   * A RegExp to test tags after enter, space, or a comma is pressed
+   */
+  regex?: Object,
+  /**
+   * Background color of tags
+   */
+  tagColor?: string,
+  /**
+   * NormalText color of tags
+   */
+  tagTextColor?: string,
+  /**
+   * Styling override for container surrounding tag text
+   */
+  tagContainerStyle?: Object,
+  /**
+   * Styling overrride for tag's text component
+   */
+  tagTextStyle?: Object,
+  /**
+   * Color of text input
+   */
+  inputColor?: string,
+  /**
+   * RNTextInput props NormalText.propTypes
+   */
+  inputProps?: Object,
+  /**
+   * path of the label in tags objects
+   */
+  labelKey?: string,
+  /**
+   *  maximum number of lines of this component
+   */
+  numberOfLines: number,
+};
+
+type State = {
+  text: string,
+  inputWidth: ?number,
+  lines: number,
+};
+
+type NativeEvent = {
+  target: number,
+  key: string,
+  eventCount: number,
+  text: string,
+};
+
+type Event = {
+  nativeEvent: NativeEvent,
+};
+
+const DEFAULT_SEPARATORS = [',', ' ', ';', '\n'];
+const DEFAULT_TAG_REGEX = /(.+)/gi;
+
+class TagInput extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props)
+    this.state = {
+      text: props.valueText,
+      inputWidth: null,
+      lines: 1,
+    };
+  }
+
+  /* TODO 1 MFG-42 check if it work, otherwise pass real window width */
+  wrapperWidth = 0;
+
+  // scroll to bottom
+  contentHeight: 0;
+  scrollViewHeight: 0;
+
+  static defaultProps = {
+    tagColor: '#dddddd',
+    tagTextColor: '#777777',
+    inputColor: '#777777',
+    numberOfLines: 2,
+  };
+
+  measureWrapper = () => {
+    if (!this.refs.wrapper) {
+      return;
+    }
+
+    this.refs.wrapper.measure((ox, oy, w /* h, px, py*/) => {
+      this.wrapperWidth = w;
+      this.setState({ inputWidth: this.wrapperWidth });
+    });
+  };
+
+  calculateWidth = () => {
+    setTimeout(() => {
+      if (!this.refs[`tag${this.props.value.length - 1}`]) {
+        return;
+      }
+
+      this.refs[`tag${this.props.value.length - 1}`].measure((ox, oy, w /* h, px, py*/) => {
+        const endPosOfTag = w + ox;
+        const margin = 3;
+        const spaceLeft = this.wrapperWidth - endPosOfTag - margin - 10;
+
+        const inputWidth = (spaceLeft < 100) ? this.wrapperWidth : spaceLeft - 10;
+        if (spaceLeft < 100) {
+          if (this.state.lines < this.props.numberOfLines) {
+            const lines = this.state.lines + 1;
+
+            this.setState({ inputWidth, lines });
+          } else {
+            this.setState({ inputWidth }, () => this.scrollToBottom());
+          }
+        } else {
+          this.setState({ inputWidth });
+        }
+      });
+    }, 0);
+  };
+
+  componentDidMount() {
+    setTimeout(() => {
+      this.calculateWidth();
+    }, 100);
+  }
+
+  componentDidUpdate(prevProps: Props /* prevState*/) {
+    if (prevProps.value.length != this.props.value.length || !prevProps.value) {
+      this.calculateWidth();
+    }
+  }
+
+  onChange = (event: Event) => {
+    if (!event || !event.nativeEvent) {
+      return;
+    }
+
+    const text = event.nativeEvent.text;
+    this.setState({ text });
+    const lastTyped = text.charAt(text.length - 1);
+
+    const parseWhen = this.props.separators || DEFAULT_SEPARATORS;
+
+    if (parseWhen.indexOf(lastTyped) > -1) {
+      this.parseTags();
+    } else {
+      if (this.props.onTextChange) {
+        this.props.onTextChange(text)
+      }
+    }
+  };
+
+  onBlur = (event: Event) => {
+    /* $FlowFixMe */
+    if (!event || !event.nativeEvent || !this.props.parseOnBlur) {
+      return;
+    }
+
+    const text = event.nativeEvent.text;
+    this.setState({ text });
+    this.parseTags();
+  };
+
+  parseTags = () => {
+    const { text } = this.state;
+    const { value } = this.props;
+
+    const regex = this.props.regex || DEFAULT_TAG_REGEX;
+    const results = text.match(regex);
+
+    if (results && results.length > 0) {
+      this.setState({ text: '' });
+      if (this.props.onTextChange) {
+        this.props.onTextChange('')
+      }
+      this.props.onChange([...new Set([...value, ...results])]);
+    }
+  };
+
+  onKeyPress = (event: Event) => {
+    if (this.state.text === '' && event.nativeEvent && event.nativeEvent.key == 'Backspace') {
+      this.pop();
+    }
+  };
+
+  focus = () => {
+    if (this.refs.tagInput) {
+      this.refs.tagInput.focus();
+    }
+  };
+
+  pop = () => {
+    const tags = [...this.props.value];
+    tags.pop();
+    this.props.onChange(tags);
+    this.focus();
+  };
+
+  removeIndex = (index: number) => {
+    const tags = [...this.props.value];
+    tags.splice(index, 1);
+    this.props.onChange(tags);
+    this.focus();
+  };
+
+  _getLabelValue = (tag) => {
+    const { labelKey } = this.props;
+
+    if (labelKey) {
+      if (labelKey in tag) {
+        return tag[labelKey];
+      }
+    }
+
+    return tag;
+  };
+
+  _renderTag = (tag, index) => {
+    const { tagColor, tagTextColor } = this.props;
+
+    return (
+      <RNTouchableOpacity
+        key={index}
+        ref={`tag${index}`}
+        style={[styles.tag, { backgroundColor: tagColor }, this.props.tagContainerStyle]}
+        onPress={() => this.removeIndex(index)}
+      >
+        <RNText style={[styles.tagText, { color: tagTextColor }, this.props.tagTextStyle]} >
+          {this._getLabelValue(tag)}&nbsp;&times;
+        </RNText >
+      </RNTouchableOpacity >
+    );
+  };
+
+
+  scrollToBottom = (animated: boolean = true) => {
+    if (this.contentHeight > this.scrollViewHeight) {
+      this.refs.scrollView.scrollTo({
+        y: this.contentHeight - this.scrollViewHeight,
+        animated,
+      });
+    }
+  };
+
+  render() {
+    const { text, inputWidth, lines } = this.state;
+    const { value, inputColor } = this.props;
+
+    const defaultInputProps = {
+      autoCapitalize: 'none',
+      autoCorrect: false,
+      placeholder: 'Start typing',
+      returnKeyType: 'done',
+      keyboardType: 'default',
+      underlineColorAndroid: 'rgba(0,0,0,0)',
+    };
+
+    const inputProps = { ...defaultInputProps, ...this.props.inputProps };
+
+    const wrapperHeight = (lines - 1) * 40 + 36;
+
+    const width = inputWidth || 400;
+
+    return (
+      <RNTouchableWithoutFeedback
+        onPress={() => this.refs.tagInput.focus()}
+        onLayout={this.measureWrapper}
+        style={[styles.container]}
+      >
+        <RNView
+          style={[styles.wrapper, { height: wrapperHeight }]}
+          ref="wrapper"
+          onLayout={this.measureWrapper}
+        >
+          <RNScrollView
+            ref="scrollView"
+            style={styles.tagInputContainerScroll}
+            onContentSizeChange={(w, h) => this.contentHeight = h}
+            onLayout={ev => this.scrollViewHeight = ev.nativeEvent.layout.height}
+          >
+            <RNView style={styles.tagInputContainer} >
+              {value.map((tag, index) => this._renderTag(tag, index))}
+              <RNView style={[styles.textInputContainer, { width: this.state.inputWidth }]} >
+                <RNTextInput
+                  ref="tagInput"
+                  blurOnSubmit={false}
+                  onKeyPress={this.onKeyPress}
+                  value={text}
+                  style={[styles.textInput, {
+                    width,
+                    color: inputColor,
+                  }]}
+                  onBlur={this.onBlur}
+                  onChange={this.onChange}
+                  onSubmitEditing={this.parseTags}
+                  {...inputProps}
+                />
+              </RNView >
+            </RNView >
+          </RNScrollView >
+        </RNView >
+      </RNTouchableWithoutFeedback >
+    );
+  }
+}
+
+const styles = rnCreateStylesheet({
+  container: {
+    flex: 1,
+  },
+  wrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    marginTop: 3,
+    marginBottom: 2,
+    alignItems: 'flex-start',
+  },
+  tagInputContainerScroll: {
+    flex: 1,
+  },
+  tagInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  textInput: {
+    height: 36,
+    fontSize: 16,
+    flex: 0.6,
+    marginBottom: 6,
+    padding: 0,
+
+  },
+  textInputContainer: {
+    height: 36,
+  },
+  tag: {
+    justifyContent: 'center',
+    marginTop: 6,
+    marginRight: 3,
+    padding: 8,
+    height: 24,
+    borderRadius: 2,
+  },
+  tagText: {
+    padding: 0,
+    margin: 0,
+  },
+});
+
+export { TagInput }
+
+export { DEFAULT_SEPARATORS, DEFAULT_TAG_REGEX };

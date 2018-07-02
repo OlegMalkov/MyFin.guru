@@ -1,0 +1,18 @@
+{
+  "name": "mfg-base",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "flow": "flow --show-all-errors --include-warnings",
+    "cucumber": "NODE_ENV=production IS_TEST_ENV=true IS_RN_ENV=false cucumber-js --tags \"not @skip\" --format summary --require features/utils/hooks.js --require features/step_definitions/baseSteps.js",
+    "cucumber-ui": "NODE_ENV=production IS_TEST_ENV=true IS_RN_ENV=false UI=true cucumber-js -t \"not @skip\" --format summary"
+  },
+  "author": "",
+  "license": "ISC",
+  "jest": {
+    "transform": {
+      "^.+\\.js$": "<rootDir>/jest.transform.js"
+    }
+  }
+}
