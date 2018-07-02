@@ -1,0 +1,8 @@
+cron:
+- description: Push a "tick" onto pubsub every day
+  url: /publish/daily-tick
+  schedule: daily 10.00
+
+- description: Push a "tick" to update currencies
+  url: /publish/update-currencies
+  schedule: daily 12.00
