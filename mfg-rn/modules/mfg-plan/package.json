@@ -1,0 +1,17 @@
+{
+  "name": "mfg-plan",
+  "version": "1.0.0",
+  "description": "MyFin.guru - Plan",
+  "main": "planModulesRegistry.js",
+  "scripts": {
+    "flow": "flow --show-all-errors --include-warnings",
+    "cucumber": "NODE_ENV=production IS_TEST_ENV=true IS_RN_ENV=false cucumber-js --tags \"not @skip\" --format summary --require features/hooks.js  --require node_modules/mfg-base/features/step_definitions/baseSteps.js --require features/step_definitions/analyticsScreenSteps.js",
+    "cucumber-ui": "NODE_ENV=production IS_TEST_ENV=true IS_RN_ENV=false UI=true cucumber-js -t \"not @skip\" --format summary"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "react": "16.3.0-alpha.2",
+    "mfg-base": "git+ssh://git@bitbucket.org/mfg-dev/mfg-base.git"
+  }
+}

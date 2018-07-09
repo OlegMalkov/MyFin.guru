@@ -1,0 +1,19 @@
+/* @flow */
+
+export const
+  ARCHIVE_SCREEN_ARCHIVE_TRANSACTIONS_BP: 'ARCHIVE_SCREEN_ARCHIVE_TRANSACTIONS_BP' =
+    'ARCHIVE_SCREEN_ARCHIVE_TRANSACTIONS_BP',
+  ARCHIVE_SCREEN_RESTART_APP_BP: 'ARCHIVE_SCREEN_RESTART_APP_BP' =
+    'ARCHIVE_SCREEN_RESTART_APP_BP'
+
+export type AnyArchiveAction =
+  {| type: typeof ARCHIVE_SCREEN_ARCHIVE_TRANSACTIONS_BP |}
+  | {| type: typeof ARCHIVE_SCREEN_RESTART_APP_BP |}
+
+export const
+  archiveScreenArchiveTransactionBPAC = () => ({
+    type: ARCHIVE_SCREEN_ARCHIVE_TRANSACTIONS_BP,
+  }),
+  archiveScreenRestartAppBPAC = () => ({
+    type: ARCHIVE_SCREEN_RESTART_APP_BP,
+  })

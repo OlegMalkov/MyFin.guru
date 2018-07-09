@@ -1,0 +1,13 @@
+{
+  "name": "mfg-settings",
+  "version": "1.0.0",
+  "description": "MyFin.guru - Settings",
+  "main": "settingsModulesRegistry.js",
+  "scripts": {
+    "flow": "flow --show-all-errors --include-warnings",
+    "cucumber": "NODE_ENV=production IS_TEST_ENV=true IS_RN_ENV=false cucumber-js --tags \"not @skip\" --format summary --require features/hooks.js  --require node_modules/mfg-base/features/step_definitions/baseSteps.js --require features/step_definitions/analyticsScreenSteps.js",
+    "cucumber-ui": "NODE_ENV=production IS_TEST_ENV=true IS_RN_ENV=false UI=true cucumber-js -t \"not @skip\" --format summary"
+  },
+  "author": "",
+  "license": "ISC"
+}
